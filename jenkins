@@ -1,46 +1,36 @@
 pipeline {
   agent any
-    environment {
-        NETLIFY_SITE_ID = '6b6de050-4976-4683-9ea8-4b2c892525dc'
-        NETLIFY_AUTH_TOKEN = credentials('netlifytoken')
-        CI_ENVIRONMENT_URL = 'https://beautiful-bonbon-6280a8.netlify.app/'
-    }
-  stages {
+  environment {
+    NETLIFY_SITE_ID = '6b6de050-4976-4683-9ea8-4b2c892525dc'
+    NETLIFY_AUTH_TOKEN = credentials('netlifytoken')
+    CI_ENVIRONMENT_URL = 'https://beautiful-bonbon-6280a8.netlify.app/'
+  }
 
-    stage ('Test') {
-      agent {
-        docker { image 'node:18-alpine'; reuseNode true }
-      }
+  stages {
+    stage('Test') {
+      agent { docker { image 'node:18-alpine'; reuseNode true } }
       steps {
         sh '''
-        #test -f build/index.html
         npm test
         '''
       }
     }
 
-    stage ('Deploy') {
-      agent {
-        docker { image 'node:18'; reuseNode true }
-      }
+    stage('Deploy') {
+      agent { docker { image 'node:18'; reuseNode true } }
       steps {
         sh '''
          npm install netlify-cli
-         node_modules/.bin/netlify --version
-         echo "Deployin to Prod Site ID: $NETLIFY_SITE_ID"
-         node_modules/.bin/netlify status
-         node_modules/.bin/netlify deploy --dir=build --prod
+         npx netlify --version
+         echo "Deploying to Prod Site ID: $NETLIFY_SITE_ID"
+         npx netlify status
+         npx netlify deploy --dir=build --prod
         '''
-      }  // <-- Closing steps
-    }    // <-- Closing Deploy stage
-
-    stage ('E2E') {
-      agent {
-        docker {
-          image 'mcr.microsoft.com/playwright:v1.55.0-noble'
-          reuseNode true
-        }
       }
+    }
+
+    stage('E2E') {
+      agent { docker { image 'mcr.microsoft.com/playwright:v1.55.0-noble'; reuseNode true } }
       steps {
         sh '''
         npm install serve
@@ -52,29 +42,24 @@ pipeline {
       }
     }
 
-  }  // <-- Closing stages block
+    // <-- Moved inside the stages block
+    stage('Prod E2E') {
+      agent { docker { image 'mcr.microsoft.com/playwright:v1.55.0-noble'; reuseNode true } }
+      environment {
+        CI_ENVIRONMENT_URL = 'https://beautiful-bonbon-6280a8.netlify.app'
+      }
+      steps {
+        sh '''
+        # Add your production-level E2E testing commands here
+        echo "Running Prod E2E against $CI_ENVIRONMENT_URL"
+        '''
+      }
+    }
+  }  // <-- End of stages block
 
   post {
     always {
       junit 'jest-results/junit.xml'
     }
   }
-
-stage ('Prod E2E') {
-  agent {
-    docker {
-      image 'mcr.microsoft.com/playwright:v1.55.0-noble'
-      reuseNode true
-    }
-  }
-
-  environment {
-        CI_ENVIRONMENT_URL = 'https://beautiful-bonbon-6280a8.netlify.app'
-    }
-  steps {
-    sh '''
-    
-    '''
-  }
-}
 }
