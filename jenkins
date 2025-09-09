@@ -3,6 +3,7 @@ pipeline {
     environment {
         NETLIFY_SITE_ID = '6b6de050-4976-4683-9ea8-4b2c892525dc'
         NETLIFY_AUTH_TOKEN = credentials('netlifytoken')
+        CI_ENVIRONMENT_URL = 'https://beautiful-bonbon-6280a8.netlify.app/'
     }
   stages {
 
@@ -58,4 +59,22 @@ pipeline {
       junit 'jest-results/junit.xml'
     }
   }
+
+stage ('Prod E2E') {
+  agent {
+    docker {
+      image 'mcr.microsoft.com/playwright:v1.55.0-noble'
+      reuseNode true
+    }
+  }
+
+  environment {
+        CI_ENVIRONMENT_URL = 'https://beautiful-bonbon-6280a8.netlify.app'
+    }
+  steps {
+    sh '''
+    
+    '''
+  }
+}
 }
