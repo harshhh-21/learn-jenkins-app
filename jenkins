@@ -1,76 +1,54 @@
 pipeline {
-    agent any
-    stages {
-        /*
-        stage('Build') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    ls -la
-                    node --version
-                    npm --version 
-                    npm ci 
-                    npm run build 
-                    ls -la 
-                '''
-            }
-        }
-         */
-        stage ('Test' ) {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                #test -f build/index.html
-                npm test
-                '''
-            }
-        }
+  agent any
+  stages {
 
-        stage('Deploy') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                 npm install  netlify-cli
-                 node_modules/.bin/servenetlify --version
-                '''
-            }
-
-        stage ('E2E' ) {
-            agent {
-                docker {
-                    image 'mcr.microsoft.com/playwright:v1.55.0-noble'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                npm install serve
-                npx playwright install
-                node_modules/.bin/serve -s build &
-                sleep 10
-                npx playwright test
-                '''
-            }
-        }
-    
-    post {
-        always {
-            junit 'jest-results/junit.xml'
-        }
+    stage ('Test') {
+      agent {
+        docker { image 'node:18-alpine'; reuseNode true }
+      }
+      steps {
+        sh '''
+        #test -f build/index.html
+        npm test
+        '''
+      }
     }
+
+    stage ('Deploy') {
+      agent {
+        docker { image 'node:18-alpine'; reuseNode true }
+      }
+      steps {
+        sh '''
+         npm install netlify-cli
+         node_modules/.bin/servenetlify --version
+        '''
+      }  // <-- Closing steps
+    }    // <-- Closing Deploy stage
+
+    stage ('E2E') {
+      agent {
+        docker {
+          image 'mcr.microsoft.com/playwright:v1.55.0-noble'
+          reuseNode true
+        }
+      }
+      steps {
+        sh '''
+        npm install serve
+        npx playwright install
+        node_modules/.bin/serve -s build &
+        sleep 10
+        npx playwright test
+        '''
+      }
+    }
+
+  }  // <-- Closing stages block
+
+  post {
+    always {
+      junit 'jest-results/junit.xml'
+    }
+  }
 }
