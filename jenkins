@@ -30,6 +30,13 @@ pipeline {
       }
     }
 
+    stage('Approval') {
+      steps {
+        input message: 'Are you sure to do?', ok: 'Yeah We are ready.'
+      }
+
+    }
+
     stage('Deploy prod') {
       agent { docker { image 'node:18'; reuseNode true } }
       steps {
